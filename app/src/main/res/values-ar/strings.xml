@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">أدوات الشبكة</string>
+    <string name="add_server">إضافة خادم</string>
+    <string name="check_all_servers">فحص كل الخوادم</string>
+    <string name="check_server">فحص الخادم</string>
+    <string name="delete_server">حذف الخادم</string>
+    <string name="empty_server_list">لا توجد خوادم بعد. اضغط + لإضافة IP ومنافذ اختيارية. يتم فحص البينغ دائمًا.</string>
+    <string name="ports_none">المنافذ: لا شيء (بينغ فقط)</string>
+    <string name="ports_list_format">المنافذ: %1$s</string>
+    <string name="check_ping_label">بينغ</string>
+    <string name="check_port_label">منفذ %1$d</string>
+    <string name="check_row_format">%1$s — %2$s</string>
+    <string name="status_idle">لم يُفحص</string>
+    <string name="status_checking">جارٍ الفحص…</string>
+    <string name="status_online">متصل</string>
+    <string name="status_offline">غير متصل</string>
+    <string name="ping_response_time">زمن الاستجابة: %1$d مللي ثانية</string>
+    <string name="field_server_name">اسم الخادم</string>
+    <string name="field_ip_or_host">عنوان IP أو اسم المضيف</string>
+    <string name="field_ports">منافذ (اختياري)</string>
+    <string name="field_ports_hint">80, 443, 8080</string>
+    <string name="field_ports_supporting">افصل بفواصل. اتركه فارغًا للبينغ فقط.</string>
+    <string name="action_add">إضافة</string>
+    <string name="action_cancel">إلغاء</string>
+    <string name="add_server_validation_error">أدخل مضيفًا صالحًا. المنافذ يجب أن تكون بين 1 و65535.</string>
+</resources>

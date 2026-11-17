@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">Net Tools</string>
+    <string name="add_server">Add server</string>
+    <string name="check_all_servers">Check all servers</string>
+    <string name="check_server">Check server</string>
+    <string name="delete_server">Remove server</string>
+    <string name="empty_server_list">No servers yet. Tap + to add an IP address and optional ports. Ping runs automatically.</string>
+    <string name="ports_none">Ports: none (ping only)</string>
+    <string name="ports_list_format">Ports: %1$s</string>
+    <string name="check_ping_label">Ping</string>
+    <string name="check_port_label">Port %1$d</string>
+    <string name="check_row_format">%1$s — %2$s</string>
+    <string name="status_idle">Not checked</string>
+    <string name="status_checking">Checking…</string>
+    <string name="status_online">Online</string>
+    <string name="status_offline">Offline</string>
+    <string name="ping_response_time">Response time: %1$d ms</string>
+    <string name="field_server_name">Server name</string>
+    <string name="field_ip_or_host">IP address or hostname</string>
+    <string name="field_ports">Ports (optional)</string>
+    <string name="field_ports_hint">80, 443, 8080</string>
+    <string name="field_ports_supporting">Comma-separated. Leave empty for ping only.</string>
+    <string name="action_add">Add</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="add_server_validation_error">Enter a valid host. Ports must be numbers between 1 and 65535.</string>
+</resources>

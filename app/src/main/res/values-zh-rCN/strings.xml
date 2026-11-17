@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">网络工具</string>
+    <string name="add_server">添加服务器</string>
+    <string name="check_all_servers">检测全部服务器</string>
+    <string name="check_server">检测此服务器</string>
+    <string name="delete_server">删除服务器</string>
+    <string name="empty_server_list">尚无服务器。点击 + 添加 IP 和可选端口。始终会自动 Ping。</string>
+    <string name="ports_none">端口：无（仅 Ping）</string>
+    <string name="ports_list_format">端口：%1$s</string>
+    <string name="check_ping_label">Ping</string>
+    <string name="check_port_label">端口 %1$d</string>
+    <string name="check_row_format">%1$s — %2$s</string>
+    <string name="status_idle">未检测</string>
+    <string name="status_checking">检测中…</string>
+    <string name="status_online">在线</string>
+    <string name="status_offline">离线</string>
+    <string name="ping_response_time">响应时间：%1$d 毫秒</string>
+    <string name="field_server_name">服务器名称</string>
+    <string name="field_ip_or_host">IP 地址或主机名</string>
+    <string name="field_ports">端口（可选）</string>
+    <string name="field_ports_hint">80, 443, 8080</string>
+    <string name="field_ports_supporting">逗号分隔。留空则仅 Ping。</string>
+    <string name="action_add">添加</string>
+    <string name="action_cancel">取消</string>
+    <string name="add_server_validation_error">请输入有效主机。端口须为 1–65535。</string>
+</resources>

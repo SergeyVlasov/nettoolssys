@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">ネットワークツール</string>
+    <string name="add_server">サーバーを追加</string>
+    <string name="check_all_servers">すべてのサーバーを確認</string>
+    <string name="check_server">このサーバーを確認</string>
+    <string name="delete_server">サーバーを削除</string>
+    <string name="empty_server_list">サーバーがありません。+ で IP と任意のポートを追加してください。Ping は常に実行されます。</string>
+    <string name="ports_none">ポート: なし（Ping のみ）</string>
+    <string name="ports_list_format">ポート: %1$s</string>
+    <string name="check_ping_label">Ping</string>
+    <string name="check_port_label">ポート %1$d</string>
+    <string name="check_row_format">%1$s — %2$s</string>
+    <string name="status_idle">未確認</string>
+    <string name="status_checking">確認中…</string>
+    <string name="status_online">オンライン</string>
+    <string name="status_offline">オフライン</string>
+    <string name="ping_response_time">応答時間: %1$d ms</string>
+    <string name="field_server_name">サーバー名</string>
+    <string name="field_ip_or_host">IPアドレスまたはホスト名</string>
+    <string name="field_ports">ポート（任意）</string>
+    <string name="field_ports_hint">80, 443, 8080</string>
+    <string name="field_ports_supporting">カンマ区切り。空欄の場合は Ping のみ。</string>
+    <string name="action_add">追加</string>
+    <string name="action_cancel">キャンセル</string>
+    <string name="add_server_validation_error">有効なホストを入力してください。ポートは 1〜65535 です。</string>
+</resources>

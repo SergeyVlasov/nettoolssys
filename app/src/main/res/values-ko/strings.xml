@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">네트워크 도구</string>
+    <string name="add_server">서버 추가</string>
+    <string name="check_all_servers">모든 서버 확인</string>
+    <string name="check_server">이 서버 확인</string>
+    <string name="delete_server">서버 삭제</string>
+    <string name="empty_server_list">등록된 서버가 없습니다. +로 IP와 선택적 포트를 추가하세요. 핑은 항상 실행됩니다.</string>
+    <string name="ports_none">포트: 없음(핑만)</string>
+    <string name="ports_list_format">포트: %1$s</string>
+    <string name="check_ping_label">핑</string>
+    <string name="check_port_label">포트 %1$d</string>
+    <string name="check_row_format">%1$s — %2$s</string>
+    <string name="status_idle">미확인</string>
+    <string name="status_checking">확인 중…</string>
+    <string name="status_online">온라인</string>
+    <string name="status_offline">오프라인</string>
+    <string name="ping_response_time">응답 시간: %1$d ms</string>
+    <string name="field_server_name">서버 이름</string>
+    <string name="field_ip_or_host">IP 주소 또는 호스트 이름</string>
+    <string name="field_ports">포트(선택)</string>
+    <string name="field_ports_hint">80, 443, 8080</string>
+    <string name="field_ports_supporting">쉼표로 구분. 비우면 핑만 확인합니다.</string>
+    <string name="action_add">추가</string>
+    <string name="action_cancel">취소</string>
+    <string name="add_server_validation_error">유효한 호스트를 입력하세요. 포트는 1–65535여야 합니다.</string>
+</resources>

@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">Netzwerk-Tools</string>
+    <string name="add_server">Server hinzufügen</string>
+    <string name="check_all_servers">Alle Server prüfen</string>
+    <string name="check_server">Server prüfen</string>
+    <string name="delete_server">Server entfernen</string>
+    <string name="empty_server_list">Noch keine Server. Tippen Sie auf + für IP und optionale Ports. Ping läuft immer.</string>
+    <string name="ports_none">Ports: keine (nur Ping)</string>
+    <string name="ports_list_format">Ports: %1$s</string>
+    <string name="check_ping_label">Ping</string>
+    <string name="check_port_label">Port %1$d</string>
+    <string name="check_row_format">%1$s — %2$s</string>
+    <string name="status_idle">Nicht geprüft</string>
+    <string name="status_checking">Wird geprüft…</string>
+    <string name="status_online">Online</string>
+    <string name="status_offline">Offline</string>
+    <string name="ping_response_time">Antwortzeit: %1$d ms</string>
+    <string name="field_server_name">Servername</string>
+    <string name="field_ip_or_host">IP-Adresse oder Hostname</string>
+    <string name="field_ports">Ports (optional)</string>
+    <string name="field_ports_hint">80, 443, 8080</string>
+    <string name="field_ports_supporting">Kommagetrennt. Leer lassen für nur Ping.</string>
+    <string name="action_add">Hinzufügen</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="add_server_validation_error">Gültigen Host eingeben. Ports müssen zwischen 1 und 65535 liegen.</string>
+</resources>

@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">Herramientas de red</string>
+    <string name="add_server">Añadir servidor</string>
+    <string name="check_all_servers">Comprobar todos los servidores</string>
+    <string name="check_server">Comprobar servidor</string>
+    <string name="delete_server">Eliminar servidor</string>
+    <string name="empty_server_list">Aún no hay servidores. Pulsa + para añadir una IP y puertos opcionales. El ping se ejecuta siempre.</string>
+    <string name="ports_none">Puertos: ninguno (solo ping)</string>
+    <string name="ports_list_format">Puertos: %1$s</string>
+    <string name="check_ping_label">Ping</string>
+    <string name="check_port_label">Puerto %1$d</string>
+    <string name="check_row_format">%1$s — %2$s</string>
+    <string name="status_idle">Sin comprobar</string>
+    <string name="status_checking">Comprobando…</string>
+    <string name="status_online">En línea</string>
+    <string name="status_offline">Fuera de línea</string>
+    <string name="ping_response_time">Tiempo de respuesta: %1$d ms</string>
+    <string name="field_server_name">Nombre del servidor</string>
+    <string name="field_ip_or_host">Dirección IP o nombre de host</string>
+    <string name="field_ports">Puertos (opcional)</string>
+    <string name="field_ports_hint">80, 443, 8080</string>
+    <string name="field_ports_supporting">Separados por comas. Déjalo vacío para solo ping.</string>
+    <string name="action_add">Añadir</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="add_server_validation_error">Introduce un host válido. Los puertos deben ser del 1 al 65535.</string>
+</resources>
