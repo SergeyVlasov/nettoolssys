@@ -11,21 +11,42 @@ enum class CheckStatus {
 }
 
 @Serializable
+enum class PortProtocol {
+    TCP,
+    UDP,
+}
+
+@Serializable
+data class PortTarget(
+    val port: Int,
+    val protocol: PortProtocol = PortProtocol.TCP,
+)
+
+@Serializable
 data class ServerEntry(
     val id: String = UUID.randomUUID().toString(),
     val name: String = "",
     val host: String,
+    val portTargets: List<PortTarget> = emptyList(),
     val ports: List<Int> = emptyList(),
     private val port: Int = 0,
 ) {
-    fun resolvedPorts(): List<Int> =
-        ports.ifEmpty { if (port in 1..65535) listOf(port) else emptyList() }
+    fun resolvedPortTargets(): List<PortTarget> {
+        if (portTargets.isNotEmpty()) return portTargets
+        val legacyPorts = ports.ifEmpty { if (port in 1..65535) listOf(port) else emptyList() }
+        return legacyPorts.map { PortTarget(port = it, protocol = PortProtocol.TCP) }
+    }
 
-    fun forPersistence(): ServerEntry = copy(ports = resolvedPorts(), port = 0)
+    fun forPersistence(): ServerEntry = copy(
+        portTargets = resolvedPortTargets(),
+        ports = emptyList(),
+        port = 0,
+    )
 }
 
 data class PortCheckStatus(
     val port: Int,
+    val protocol: PortProtocol,
     val status: CheckStatus = CheckStatus.Idle,
     val responseTimeMs: Long? = null,
 )

@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import net.tools.sys.data.ServerRepository
 import net.tools.sys.model.CheckStatus
 import net.tools.sys.model.PortCheckStatus
+import net.tools.sys.model.PortTarget
 import net.tools.sys.model.ServerEntry
 import net.tools.sys.model.ServerUiState
 import net.tools.sys.network.ServerConnectivityChecker
@@ -32,12 +33,32 @@ class ServerMonitorViewModel(application: Application) : AndroidViewModel(applic
             val prior = states[mergedEntry.id]
             prior?.copy(entry = mergedEntry) ?: ServerUiState(
                 entry = mergedEntry,
-                portResults = mergedEntry.resolvedPorts().map { PortCheckStatus(port = it) },
+                portResults = mergedEntry.resolvedPortTargets().map { target ->
+                    PortCheckStatus(port = target.port, protocol = target.protocol)
+                },
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun addServer(name: String, host: String, ports: List<Int>) {
+    suspend fun exportServersJson(): String = repository.exportToJson()
+
+    fun importServersJson(raw: String, onResult: (Boolean) -> Unit) {
+        val parsed = repository.parseImportJson(raw)
+        viewModelScope.launch {
+            parsed.fold(
+                onSuccess = { servers ->
+                    repository.replaceAllServers(servers)
+                    checkStates.value = emptyMap()
+                    onResult(true)
+                },
+                onFailure = {
+                    onResult(false)
+                },
+            )
+        }
+    }
+
+    fun addServer(name: String, host: String, portTargets: List<PortTarget>) {
         val trimmed = host.trim()
         if (trimmed.isEmpty()) return
         viewModelScope.launch {
@@ -45,15 +66,18 @@ class ServerMonitorViewModel(application: Application) : AndroidViewModel(applic
                 ServerEntry(
                     name = name.trim(),
                     host = trimmed,
-                    ports = ports.distinct().sorted(),
+                    portTargets = portTargets,
                 ),
             )
         }
     }
 
-    fun updateServerName(id: String, name: String) {
+    fun updateServer(id: String, name: String, host: String, portTargets: List<PortTarget>) {
+        val trimmedHost = host.trim()
+        if (trimmedHost.isEmpty()) return
         viewModelScope.launch {
-            repository.updateServerName(id, name)
+            repository.updateServer(id, name, trimmedHost, portTargets)
+            checkStates.value = checkStates.value - id
         }
     }
 
@@ -85,7 +109,9 @@ class ServerMonitorViewModel(application: Application) : AndroidViewModel(applic
     }
 
     private fun setChecking(id: String, entry: ServerEntry) {
-        val portChecking = entry.resolvedPorts().map { PortCheckStatus(port = it, status = CheckStatus.Checking) }
+        val portChecking = entry.resolvedPortTargets().map { target ->
+            PortCheckStatus(port = target.port, protocol = target.protocol, status = CheckStatus.Checking)
+        }
         checkStates.value = checkStates.value + (
             id to ServerUiState(
                 entry = entry,
@@ -103,6 +129,7 @@ class ServerMonitorViewModel(application: Application) : AndroidViewModel(applic
         val portResults = result.ports.map { portResult ->
             PortCheckStatus(
                 port = portResult.port,
+                protocol = portResult.protocol,
                 status = if (portResult.result.reachable) CheckStatus.Online else CheckStatus.Offline,
                 responseTimeMs = portResult.result.responseTimeMs,
             )

@@ -2,7 +2,11 @@ package net.tools.sys.network
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import net.tools.sys.model.PortProtocol
+import net.tools.sys.model.PortTarget
 import net.tools.sys.model.ServerEntry
+import java.net.DatagramPacket
+import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
@@ -16,6 +20,7 @@ data class CheckResult(
 
 data class PortCheckResult(
     val port: Int,
+    val protocol: PortProtocol,
     val result: CheckResult,
 )
 
@@ -30,13 +35,16 @@ class ServerConnectivityChecker {
         val ping = runCatching { checkPing(server.host, timeoutMs) }.getOrElse { error ->
             CheckResult(reachable = false, responseTimeMs = null, detail = error.message)
         }
-        val portResults = server.resolvedPorts().map { port ->
-            PortCheckResult(
-                port = port,
-                result = runCatching { checkTcp(server.host, port, timeoutMs) }.getOrElse { error ->
-                    CheckResult(reachable = false, responseTimeMs = null, detail = error.message)
-                },
-            )
+        val portResults = server.resolvedPortTargets().map { target ->
+            val result = runCatching {
+                when (target.protocol) {
+                    PortProtocol.TCP -> checkTcp(server.host, target.port, timeoutMs)
+                    PortProtocol.UDP -> checkUdp(server.host, target.port, timeoutMs)
+                }
+            }.getOrElse { error ->
+                CheckResult(reachable = false, responseTimeMs = null, detail = error.message)
+            }
+            PortCheckResult(port = target.port, protocol = target.protocol, result = result)
         }
         ServerCheckResult(ping = ping, ports = portResults)
     }
@@ -54,6 +62,27 @@ class ServerConnectivityChecker {
         return CheckResult(
             reachable = connected,
             responseTimeMs = if (connected) elapsed else null,
+            detail = null,
+        )
+    }
+
+    private fun checkUdp(host: String, port: Int, timeoutMs: Int): CheckResult {
+        var elapsed: Long = 0
+        val ok = runCatching {
+            elapsed = measureTimeMillis {
+                DatagramSocket().use { socket ->
+                    socket.soTimeout = timeoutMs
+                    val address = InetAddress.getByName(host)
+                    val payload = ByteArray(1)
+                    val packet = DatagramPacket(payload, payload.size, address, port)
+                    socket.send(packet)
+                }
+            }
+            true
+        }.getOrDefault(false)
+        return CheckResult(
+            reachable = ok,
+            responseTimeMs = if (ok) elapsed else null,
             detail = null,
         )
     }
