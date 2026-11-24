@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import net.tools.sys.data.AppPreferencesRepository
+import net.tools.sys.locale.AppLanguages
+import net.tools.sys.locale.AppLocale
 
 class AppSettingsViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -19,9 +21,22 @@ class AppSettingsViewModel(application: Application) : AndroidViewModel(applicat
         false,
     )
 
+    val appLanguageTag: StateFlow<String> = preferences.appLanguageTag.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        "",
+    )
+
     fun setUseDarkTheme(enabled: Boolean) {
         viewModelScope.launch {
             preferences.setUseDarkTheme(enabled)
+        }
+    }
+
+    fun setAppLanguage(tag: String) {
+        viewModelScope.launch {
+            preferences.setAppLanguageTag(tag)
+            AppLocale.apply(AppLanguages.normalizeTag(tag))
         }
     }
 }

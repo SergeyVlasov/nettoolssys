@@ -14,10 +14,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -52,6 +50,7 @@ fun ScheduledMonitoringDialog(
     var showSelectError by remember { mutableStateOf(false) }
     var notificationsDenied by remember { mutableStateOf(false) }
     var enableAfterPermission by rememberSaveable { mutableStateOf(false) }
+    var intervalExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -105,21 +104,35 @@ fun ScheduledMonitoringDialog(
                         },
                     )
                 }
-                Text(
-                    text = stringResource(R.string.scheduled_monitoring_interval),
-                    style = MaterialTheme.typography.titleSmall,
+                val intervalLabel = stringResource(
+                    R.string.scheduled_monitoring_minutes,
+                    state.intervalMinutes,
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    MonitoringIntervals.choices.forEach { minutes ->
-                        IntervalOptionButton(
-                            label = stringResource(R.string.scheduled_monitoring_minutes, minutes),
-                            selected = state.intervalMinutes == minutes,
-                            onClick = { viewModel.setIntervalMinutes(minutes) },
-                            modifier = Modifier.weight(1f),
-                        )
+                    Text(
+                        text = stringResource(R.string.scheduled_monitoring_interval),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.weight(1f),
+                    )
+                    FormDropdownField(
+                        value = intervalLabel,
+                        expanded = intervalExpanded,
+                        onExpandedChange = { intervalExpanded = it },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        MonitoringIntervals.choices.forEach { minutes ->
+                            DropdownMenuTextItem(
+                                label = stringResource(R.string.scheduled_monitoring_minutes, minutes),
+                                onClick = {
+                                    viewModel.setIntervalMinutes(minutes)
+                                    intervalExpanded = false
+                                },
+                            )
+                        }
                     }
                 }
                 Text(
@@ -231,24 +244,6 @@ fun ScheduledMonitoringDialog(
                 }
             },
         )
-    }
-}
-
-@Composable
-private fun IntervalOptionButton(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    if (selected) {
-        Button(onClick = onClick, modifier = modifier) {
-            Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-    } else {
-        OutlinedButton(onClick = onClick, modifier = modifier) {
-            Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
     }
 }
 

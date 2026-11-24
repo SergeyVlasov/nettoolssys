@@ -1,7 +1,7 @@
 package net.tools.sys
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
@@ -11,7 +11,7 @@ import net.tools.sys.ui.AppSettingsViewModel
 import net.tools.sys.ui.ServerMonitorScreen
 import net.tools.sys.ui.theme.NettoolssysTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

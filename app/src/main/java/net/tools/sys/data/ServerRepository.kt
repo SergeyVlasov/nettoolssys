@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.serializer
 import net.tools.sys.model.PortTarget
 import net.tools.sys.model.ServerEntry
 import net.tools.sys.model.ServerListExport
@@ -21,43 +20,60 @@ private val Context.serverDataStore: DataStore<Preferences> by preferencesDataSt
 class ServerRepository(private val context: Context) {
 
     private val serversKey = stringPreferencesKey("server_list_json")
+    private val serverListSerializer = ListSerializer(ServerEntry.serializer())
 
-    private val json = Json { ignoreUnknownKeys = true }
+    // coerceInputValues maps removed protocols (e.g. legacy "UDP") to the default instead of failing the whole list.
+    private val json = Json {
+        ignoreUnknownKeys = true
+        coerceInputValues = true
+    }
 
     private val exportJson = Json {
         ignoreUnknownKeys = true
+        coerceInputValues = true
         prettyPrint = true
         encodeDefaults = true
     }
 
     val servers: Flow<List<ServerEntry>> = context.serverDataStore.data.map { prefs ->
         val raw = prefs[serversKey] ?: return@map emptyList()
-        runCatching { json.decodeFromString<List<ServerEntry>>(raw) }
+        runCatching { json.decodeFromString(serverListSerializer, raw) }
             .getOrDefault(emptyList())
             .map { it.forPersistence() }
     }
 
     suspend fun saveServers(servers: List<ServerEntry>) {
         context.serverDataStore.edit { prefs ->
-            prefs[serversKey] = json.encodeToString(ListSerializer(ServerEntry.serializer()), servers.map { it.forPersistence() })
+            prefs[serversKey] = json.encodeToString(serverListSerializer, servers.map { it.forPersistence() })
         }
     }
 
     suspend fun addServer(entry: ServerEntry) {
         context.serverDataStore.edit { prefs ->
             val current = prefs[serversKey]?.let {
-                runCatching { json.decodeFromString<List<ServerEntry>>(it) }.getOrDefault(emptyList())
+                runCatching { json.decodeFromString(serverListSerializer, it) }.getOrDefault(emptyList())
             } ?: emptyList()
-            prefs[serversKey] = json.encodeToString(ListSerializer(ServerEntry.serializer()), current + entry.forPersistence())
+            prefs[serversKey] = json.encodeToString(serverListSerializer, current + entry.forPersistence())
         }
     }
 
     suspend fun removeServer(id: String) {
         context.serverDataStore.edit { prefs ->
             val current = prefs[serversKey]?.let {
-                runCatching { json.decodeFromString<List<ServerEntry>>(it) }.getOrDefault(emptyList())
+                runCatching { json.decodeFromString(serverListSerializer, it) }.getOrDefault(emptyList())
             } ?: emptyList()
-            prefs[serversKey] = json.encodeToString(ListSerializer(ServerEntry.serializer()), current.filterNot { it.id == id })
+            prefs[serversKey] = json.encodeToString(serverListSerializer, current.filterNot { it.id == id })
+        }
+    }
+
+    suspend fun reorderServers(orderedIds: List<String>) {
+        context.serverDataStore.edit { prefs ->
+            val current = prefs[serversKey]?.let {
+                runCatching { json.decodeFromString(serverListSerializer, it) }.getOrDefault(emptyList())
+            } ?: emptyList()
+            val position = orderedIds.withIndex().associate { (index, id) -> id to index }
+            val reordered = current.sortedBy { position[it.id] ?: Int.MAX_VALUE }
+            prefs[serversKey] = json.encodeToString(serverListSerializer, reordered.map { it.forPersistence() })
         }
     }
 
@@ -69,7 +85,7 @@ class ServerRepository(private val context: Context) {
     ) {
         context.serverDataStore.edit { prefs ->
             val current = prefs[serversKey]?.let {
-                runCatching { json.decodeFromString<List<ServerEntry>>(it) }.getOrDefault(emptyList())
+                runCatching { json.decodeFromString(serverListSerializer, it) }.getOrDefault(emptyList())
             } ?: emptyList()
             val updated = current.map { entry ->
                 if (entry.id == id) {
@@ -82,7 +98,7 @@ class ServerRepository(private val context: Context) {
                     entry.forPersistence()
                 }
             }
-            prefs[serversKey] = json.encodeToString(ListSerializer(ServerEntry.serializer()), updated)
+            prefs[serversKey] = json.encodeToString(serverListSerializer, updated)
         }
     }
 
@@ -99,10 +115,10 @@ class ServerRepository(private val context: Context) {
 
     fun parseImportJson(raw: String): Result<List<ServerEntry>> {
         return runCatching {
-            val parsed = exportJson.decodeFromString<ServerListExport>(raw)
+            val parsed = exportJson.decodeFromString(ServerListExport.serializer(), raw)
             parsed.servers.map { it.forPersistence() }
         }.recoverCatching {
-            exportJson.decodeFromString<List<ServerEntry>>(raw).map { it.forPersistence() }
+            exportJson.decodeFromString(serverListSerializer, raw).map { it.forPersistence() }
         }
     }
 }

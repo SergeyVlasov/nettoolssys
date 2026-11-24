@@ -1,6 +1,5 @@
 package net.tools.sys.ui
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,10 +8,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,6 +17,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,6 +38,7 @@ import java.text.DateFormat
 import java.util.Date
 
 private val OnlineColor = Color(0xFF2E7D32)
+private val OfflineColor = Color(0xFFFF0000)
 
 @Composable
 fun MonitoringHistoryDialog(
@@ -46,6 +47,10 @@ fun MonitoringHistoryDialog(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.refresh() }
+    var serverExpanded by remember { mutableStateOf(false) }
+    var periodExpanded by remember { mutableStateOf(false) }
+    val selectedServer = state.servers.find { it.id == state.serverId }
+    val serverLabel = selectedServer?.displayName() ?: stringResource(R.string.history_server_placeholder)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -68,35 +73,57 @@ fun MonitoringHistoryDialog(
                 }
 
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    state.servers.forEach { server ->
-                        FilterChip(
-                            selected = server.id == state.serverId,
-                            onClick = { viewModel.selectServer(server.id) },
-                            label = {
-                                Text(
-                                    text = server.displayName(),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            },
-                        )
+                    Text(
+                        text = stringResource(R.string.history_server),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.weight(1f),
+                    )
+                    FormDropdownField(
+                        value = serverLabel,
+                        expanded = serverExpanded,
+                        onExpandedChange = { serverExpanded = it },
+                        modifier = Modifier.weight(1.4f),
+                    ) {
+                        state.servers.forEach { server ->
+                            DropdownMenuTextItem(
+                                label = server.displayName(),
+                                onClick = {
+                                    viewModel.selectServer(server.id)
+                                    serverExpanded = false
+                                },
+                            )
+                        }
                     }
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    HistoryPeriod.entries.forEach { period ->
-                        FilterChip(
-                            selected = period == state.period,
-                            onClick = { viewModel.selectPeriod(period) },
-                            label = { Text(stringResource(period.labelRes), maxLines = 1) },
-                        )
+                    Text(
+                        text = stringResource(R.string.history_period),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.weight(1f),
+                    )
+                    FormDropdownField(
+                        value = stringResource(state.period.labelRes),
+                        expanded = periodExpanded,
+                        onExpandedChange = { periodExpanded = it },
+                        modifier = Modifier.weight(1.4f),
+                    ) {
+                        HistoryPeriod.entries.forEach { period ->
+                            DropdownMenuTextItem(
+                                label = stringResource(period.labelRes),
+                                onClick = {
+                                    viewModel.selectPeriod(period)
+                                    periodExpanded = false
+                                },
+                            )
+                        }
                     }
                 }
 
@@ -192,7 +219,7 @@ private fun HistoryRow(entry: MonitoringHistoryEntity) {
                 text = stringResource(
                     if (online) R.string.status_available else R.string.status_unavailable,
                 ),
-                color = if (online) OnlineColor else MaterialTheme.colorScheme.error,
+                color = if (online) OnlineColor else OfflineColor,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
             )

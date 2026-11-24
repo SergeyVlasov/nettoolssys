@@ -5,11 +5,11 @@ import kotlinx.coroutines.withContext
 import net.tools.sys.model.PortProtocol
 import net.tools.sys.model.PortTarget
 import net.tools.sys.model.ServerEntry
-import java.net.DatagramPacket
-import java.net.DatagramSocket
+import java.net.HttpURLConnection
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.net.URL
 import kotlin.system.measureTimeMillis
 
 data class CheckResult(
@@ -39,7 +39,9 @@ class ServerConnectivityChecker {
             val result = runCatching {
                 when (target.protocol) {
                     PortProtocol.TCP -> checkTcp(server.host, target.port, timeoutMs)
-                    PortProtocol.UDP -> checkUdp(server.host, target.port, timeoutMs)
+                    PortProtocol.HTTP -> checkHttp("http", server.host, target.port, timeoutMs)
+                    PortProtocol.HTTPS -> checkHttp("https", server.host, target.port, timeoutMs)
+                    PortProtocol.SSH -> checkSsh(server.host, target.port, timeoutMs)
                 }
             }.getOrElse { error ->
                 CheckResult(reachable = false, responseTimeMs = null, detail = error.message)
@@ -66,24 +68,49 @@ class ServerConnectivityChecker {
         )
     }
 
-    private fun checkUdp(host: String, port: Int, timeoutMs: Int): CheckResult {
+    private fun checkSsh(host: String, port: Int, timeoutMs: Int): CheckResult {
         var elapsed: Long = 0
+        var banner: String? = null
         val ok = runCatching {
             elapsed = measureTimeMillis {
-                DatagramSocket().use { socket ->
+                Socket().use { socket ->
+                    socket.connect(InetSocketAddress(host, port), timeoutMs)
                     socket.soTimeout = timeoutMs
-                    val address = InetAddress.getByName(host)
-                    val payload = ByteArray(1)
-                    val packet = DatagramPacket(payload, payload.size, address, port)
-                    socket.send(packet)
+                    banner = socket.getInputStream().bufferedReader().readLine()
                 }
             }
-            true
+            banner?.startsWith("SSH-") == true
         }.getOrDefault(false)
         return CheckResult(
             reachable = ok,
             responseTimeMs = if (ok) elapsed else null,
-            detail = null,
+            detail = banner?.take(80),
+        )
+    }
+
+    private fun checkHttp(scheme: String, host: String, port: Int, timeoutMs: Int): CheckResult {
+        val urlHost = if (host.contains(':') && !host.startsWith("[")) "[$host]" else host
+        val url = URL(scheme, urlHost, port, "/")
+        var code = 0
+        val elapsed = measureTimeMillis {
+            val connection = url.openConnection() as HttpURLConnection
+            try {
+                connection.connectTimeout = timeoutMs
+                connection.readTimeout = timeoutMs
+                connection.instanceFollowRedirects = false
+                connection.requestMethod = "GET"
+                connection.setRequestProperty("User-Agent", "NetToolsSys")
+                code = connection.responseCode
+            } finally {
+                connection.disconnect()
+            }
+        }
+        // Any non-5xx response (including redirects and 4xx) means the site is up and serving.
+        val ok = code in 100..499
+        return CheckResult(
+            reachable = ok,
+            responseTimeMs = if (ok) elapsed else null,
+            detail = "HTTP $code",
         )
     }
 

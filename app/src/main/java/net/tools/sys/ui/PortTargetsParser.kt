@@ -29,7 +29,9 @@ private fun parseSinglePortTarget(part: String): PortTarget? {
 
     val protocol = when (protocolPart.uppercase()) {
         "", "TCP" -> PortProtocol.TCP
-        "UDP" -> PortProtocol.UDP
+        "HTTP" -> PortProtocol.HTTP
+        "HTTPS" -> PortProtocol.HTTPS
+        "SSH" -> PortProtocol.SSH
         else -> return null
     }
     return PortTarget(port = port, protocol = protocol)

@@ -2,6 +2,13 @@ package net.tools.sys.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,11 +16,14 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -24,6 +34,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -38,22 +49,31 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -62,12 +82,16 @@ import net.tools.sys.R
 import net.tools.sys.model.CheckStatus
 import net.tools.sys.model.PortProtocol
 import net.tools.sys.model.PortTarget
+import net.tools.sys.locale.AppLanguages
 import net.tools.sys.model.ServerUiState
+import net.tools.sys.model.defaultPort
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import kotlinx.coroutines.launch
+
+private val ProtocolDropdownWidth = 112.dp
 
 private data class PortDraftRow(
     val id: String = UUID.randomUUID().toString(),
@@ -84,6 +108,7 @@ fun ServerMonitorScreen(
     val servers by viewModel.serverStates.collectAsStateWithLifecycle()
     val monitoringState by monitoringViewModel.uiState.collectAsStateWithLifecycle()
     val useDarkTheme by appSettingsViewModel.useDarkTheme.collectAsStateWithLifecycle()
+    val appLanguageTag by appSettingsViewModel.appLanguageTag.collectAsStateWithLifecycle()
     var showAddDialog by remember { mutableStateOf(false) }
     var showAppSettings by remember { mutableStateOf(false) }
     var showScheduledMonitoring by remember { mutableStateOf(false) }
@@ -95,6 +120,41 @@ fun ServerMonitorScreen(
     val exportFailed = stringResource(R.string.export_failed)
     val importSuccess = stringResource(R.string.import_success)
     val importFailed = stringResource(R.string.import_failed)
+    val haptics = LocalHapticFeedback.current
+
+    // Order of ids while dragging and until the reordered list comes back from storage.
+    var localOrder by remember { mutableStateOf<List<String>?>(null) }
+    val latestServers by rememberUpdatedState(servers)
+    val serverIds = remember(servers) { servers.map { it.entry.id } }
+    val displayedServers = remember(servers, localOrder) {
+        val order = localOrder ?: return@remember servers
+        val byId = servers.associateBy { it.entry.id }
+        order.mapNotNull(byId::get) + servers.filter { it.entry.id !in order }
+    }
+    val listState = rememberLazyListState()
+    val reorderState = rememberReorderableListState(
+        listState = listState,
+        onMove = { fromKey, toKey ->
+            val ids = (localOrder ?: latestServers.map { it.entry.id }).toMutableList()
+            val from = ids.indexOf(fromKey)
+            val to = ids.indexOf(toKey)
+            if (from >= 0 && to >= 0) {
+                ids.add(to, ids.removeAt(from))
+                localOrder = ids
+            }
+        },
+        onDragFinished = {
+            val order = localOrder
+            if (order == null || order == latestServers.map { it.entry.id }) {
+                localOrder = null
+            } else {
+                viewModel.reorderServers(order)
+            }
+        },
+    )
+    LaunchedEffect(serverIds) {
+        if (reorderState.draggedKey == null) localOrder = null
+    }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json"),
@@ -205,15 +265,63 @@ fun ServerMonitorScreen(
                 )
             } else {
                 LazyColumn(
+                    state = listState,
                     contentPadding = PaddingValues(bottom = 120.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    items(servers, key = { it.entry.id }) { server ->
+                    items(displayedServers, key = { it.entry.id }) { server ->
+                        val id = server.entry.id
+                        val isDragging = reorderState.draggedKey == id
+                        val liftScale by animateFloatAsState(
+                            targetValue = if (isDragging) 1.03f else 1f,
+                            label = "liftScale",
+                        )
+                        val nudge = remember { Animatable(0f) }
+                        LaunchedEffect(isDragging) {
+                            if (isDragging) {
+                                nudge.animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = keyframes {
+                                        durationMillis = 360
+                                        14f at 70
+                                        -10f at 160
+                                        6f at 250
+                                        0f at 360
+                                    },
+                                )
+                            } else {
+                                nudge.snapTo(0f)
+                            }
+                        }
                         ServerCard(
                             server = server,
-                            onCheck = { viewModel.checkServer(server.entry.id) },
-                            onDelete = { viewModel.removeServer(server.entry.id) },
+                            isSelected = isDragging,
+                            onCheck = { viewModel.checkServer(id) },
+                            onDelete = { viewModel.removeServer(id) },
                             onSettings = { editingServer = server },
+                            modifier = Modifier
+                                .zIndex(if (isDragging) 1f else 0f)
+                                .animateItem(placementSpec = if (isDragging) null else spring())
+                                .graphicsLayer {
+                                    translationX = nudge.value
+                                    translationY = if (isDragging) reorderState.draggedItemOffset else 0f
+                                    scaleX = liftScale
+                                    scaleY = liftScale
+                                }
+                                .pointerInput(id) {
+                                    detectDragGesturesAfterLongPress(
+                                        onDragStart = {
+                                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            reorderState.onDragStart(id)
+                                        },
+                                        onDrag = { change, dragAmount ->
+                                            change.consume()
+                                            reorderState.onDrag(dragAmount.y)
+                                        },
+                                        onDragEnd = reorderState::onDragEnd,
+                                        onDragCancel = reorderState::onDragEnd,
+                                    )
+                                },
                         )
                     }
                 }
@@ -262,6 +370,8 @@ fun ServerMonitorScreen(
         AppSettingsDialog(
             useDarkTheme = useDarkTheme,
             onDarkThemeChange = appSettingsViewModel::setUseDarkTheme,
+            appLanguageTag = appLanguageTag,
+            onLanguageChange = appSettingsViewModel::setAppLanguage,
             onExport = {
                 showAppSettings = false
                 val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
@@ -276,14 +386,28 @@ fun ServerMonitorScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppSettingsDialog(
     useDarkTheme: Boolean,
     onDarkThemeChange: (Boolean) -> Unit,
+    appLanguageTag: String,
+    onLanguageChange: (String) -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    var themeExpanded by remember { mutableStateOf(false) }
+    var languageExpanded by remember { mutableStateOf(false) }
+    val selectedThemeLabel = if (useDarkTheme) {
+        stringResource(R.string.theme_dark)
+    } else {
+        stringResource(R.string.theme_light)
+    }
+    val selectedLanguage = AppLanguages.options.firstOrNull { it.tag == appLanguageTag }
+        ?: AppLanguages.options.first()
+    val selectedLanguageLabel = stringResource(selectedLanguage.labelRes)
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings)) },
@@ -299,18 +423,68 @@ private fun AppSettingsDialog(
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.weight(1f),
                     )
-                    ThemeOptionButton(
-                        label = stringResource(R.string.theme_light),
-                        selected = !useDarkTheme,
-                        onClick = { onDarkThemeChange(false) },
+                    ExposedDropdownMenuBox(
+                        expanded = themeExpanded,
+                        onExpandedChange = { themeExpanded = it },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        OutlinedTextField(
+                            value = selectedThemeLabel,
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = themeExpanded) },
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth(),
+                            singleLine = true,
+                        )
+                        DropdownMenu(
+                            expanded = themeExpanded,
+                            onDismissRequest = { themeExpanded = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.theme_light)) },
+                                onClick = {
+                                    onDarkThemeChange(false)
+                                    themeExpanded = false
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.theme_dark)) },
+                                onClick = {
+                                    onDarkThemeChange(true)
+                                    themeExpanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_language),
+                        style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.weight(1f),
                     )
-                    ThemeOptionButton(
-                        label = stringResource(R.string.theme_dark),
-                        selected = useDarkTheme,
-                        onClick = { onDarkThemeChange(true) },
+                    FormDropdownField(
+                        value = selectedLanguageLabel,
+                        expanded = languageExpanded,
+                        onExpandedChange = { languageExpanded = it },
                         modifier = Modifier.weight(1f),
-                    )
+                    ) {
+                        AppLanguages.options.forEach { option ->
+                            DropdownMenuTextItem(
+                                label = stringResource(option.labelRes),
+                                onClick = {
+                                    onLanguageChange(option.tag)
+                                    languageExpanded = false
+                                },
+                            )
+                        }
+                    }
                 }
                 Button(onClick = onExport, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.export_servers))
@@ -329,31 +503,23 @@ private fun AppSettingsDialog(
 }
 
 @Composable
-private fun ThemeOptionButton(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    if (selected) {
-        Button(onClick = onClick, modifier = modifier) {
-            Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-    } else {
-        OutlinedButton(onClick = onClick, modifier = modifier) {
-            Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-    }
-}
-
-@Composable
 private fun ServerCard(
     server: ServerUiState,
+    isSelected: Boolean,
     onCheck: () -> Unit,
     onDelete: () -> Unit,
     onSettings: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    val elevation by animateDpAsState(
+        targetValue = if (isSelected) 8.dp else 1.dp,
+        label = "cardElevation",
+    )
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
+        border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -425,7 +591,7 @@ private fun ServerCard(
 @Composable
 private fun pingResultColor(status: CheckStatus): Color = when (status) {
     CheckStatus.Online -> Color(0xFF2E7D32)
-    CheckStatus.Offline -> MaterialTheme.colorScheme.error
+    CheckStatus.Offline -> Color(0xFFFF0000)
     CheckStatus.Idle,
     CheckStatus.Checking,
     -> MaterialTheme.colorScheme.onSurface
@@ -488,7 +654,7 @@ private fun CheckRow(
 @Composable
 private fun checkStatusColor(status: CheckStatus): Color = when (status) {
     CheckStatus.Online -> Color(0xFF2E7D32)
-    CheckStatus.Offline -> MaterialTheme.colorScheme.error
+    CheckStatus.Offline -> Color(0xFFFF0000)
     CheckStatus.Idle, CheckStatus.Checking -> MaterialTheme.colorScheme.onSurface
 }
 
@@ -503,7 +669,9 @@ private fun checkStatusLabel(status: CheckStatus): String = when (status) {
 @Composable
 private fun protocolLabel(protocol: PortProtocol): String = when (protocol) {
     PortProtocol.TCP -> stringResource(R.string.protocol_tcp)
-    PortProtocol.UDP -> stringResource(R.string.protocol_udp)
+    PortProtocol.HTTP -> stringResource(R.string.protocol_http)
+    PortProtocol.HTTPS -> stringResource(R.string.protocol_https)
+    PortProtocol.SSH -> stringResource(R.string.protocol_ssh)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -523,20 +691,31 @@ private fun ServerFormDialog(
         mutableStateOf(portTargetsToDraftRows(initialPortTargets))
     }
     var showError by remember { mutableStateOf(false) }
+    val fieldTextStyle = formInputTextStyle()
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
+                    label = {
+                        Text(
+                            text = stringResource(R.string.field_server_name),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
+                    textStyle = fieldTextStyle,
                     singleLine = true,
-                    textStyle = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp),
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = host,
@@ -544,7 +723,14 @@ private fun ServerFormDialog(
                         host = it
                         showError = false
                     },
-                    label = { Text(stringResource(R.string.field_ip_or_host)) },
+                    label = {
+                        Text(
+                            text = stringResource(R.string.field_ip_or_host),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
+                    textStyle = fieldTextStyle,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -629,6 +815,16 @@ private fun portTargetsToDraftRows(targets: List<PortTarget>): List<PortDraftRow
     }
 }
 
+@Composable
+private fun formInputTextStyle(): TextStyle = MaterialTheme.typography.bodyLarge.copy(
+    platformStyle = PlatformTextStyle(includeFontPadding = true),
+    lineHeightStyle = LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Center,
+        trim = LineHeightStyle.Trim.None,
+        mode = LineHeightStyle.Mode.Minimum,
+    ),
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PortDraftRowEditor(
@@ -649,38 +845,44 @@ private fun PortDraftRowEditor(
             onValueChange = { value ->
                 onRowChange(row.copy(port = value.filter { it.isDigit() }.take(5)))
             },
-            label = { Text(stringResource(R.string.field_port)) },
+            label = {
+                Text(
+                    text = stringResource(R.string.field_port),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
+            textStyle = formInputTextStyle(),
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
-        ExposedDropdownMenuBox(
+        FormDropdownField(
+            value = protocolLabel(row.protocol),
             expanded = protocolExpanded,
             onExpandedChange = { protocolExpanded = it },
-            modifier = Modifier.weight(1f),
+            label = {
+                Text(
+                    text = stringResource(R.string.field_protocol),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
+            modifier = Modifier.width(ProtocolDropdownWidth),
         ) {
-            OutlinedTextField(
-                value = protocolLabel(row.protocol),
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.field_protocol)) },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = protocolExpanded) },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth(),
-            )
-            DropdownMenu(
-                expanded = protocolExpanded,
-                onDismissRequest = { protocolExpanded = false },
-            ) {
-                PortProtocol.entries.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(protocolLabel(option)) },
-                        onClick = {
-                            onRowChange(row.copy(protocol = option))
-                            protocolExpanded = false
-                        },
-                    )
-                }
+            PortProtocol.entries.forEach { option ->
+                DropdownMenuTextItem(
+                    label = protocolLabel(option),
+                    onClick = {
+                        val currentIsDefault = row.port.isBlank() ||
+                            PortProtocol.entries.any { it.defaultPort?.toString() == row.port }
+                        val newPort = option.defaultPort
+                            ?.takeIf { currentIsDefault }
+                            ?.toString()
+                            ?: row.port
+                        onRowChange(row.copy(port = newPort, protocol = option))
+                        protocolExpanded = false
+                    },
+                )
             }
         }
         if (showRemove) {

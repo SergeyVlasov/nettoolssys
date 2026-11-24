@@ -88,6 +88,12 @@ class ServerMonitorViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    fun reorderServers(orderedIds: List<String>) {
+        viewModelScope.launch {
+            repository.reorderServers(orderedIds)
+        }
+    }
+
     fun checkServer(id: String) {
         val target = serverStates.value.find { it.entry.id == id }?.entry ?: return
         viewModelScope.launch {

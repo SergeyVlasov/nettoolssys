@@ -5,7 +5,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import net.tools.sys.data.AppPreferencesRepository
 import net.tools.sys.data.MonitoringSettingsRepository
+import net.tools.sys.locale.AppLocale
 import net.tools.sys.work.MonitoringScheduler
 
 class NetToolsApplication : Application() {
@@ -14,6 +17,10 @@ class NetToolsApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        runBlocking {
+            val tag = AppPreferencesRepository(this@NetToolsApplication).currentAppLanguageTag()
+            AppLocale.apply(tag)
+        }
         applicationScope.launch {
             runCatching {
                 val settings = MonitoringSettingsRepository(this@NetToolsApplication).currentSettings()

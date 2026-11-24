@@ -13,8 +13,18 @@ enum class CheckStatus {
 @Serializable
 enum class PortProtocol {
     TCP,
-    UDP,
+    HTTP,
+    HTTPS,
+    SSH,
 }
+
+val PortProtocol.defaultPort: Int?
+    get() = when (this) {
+        PortProtocol.TCP -> null
+        PortProtocol.HTTP -> 80
+        PortProtocol.HTTPS -> 443
+        PortProtocol.SSH -> 22
+    }
 
 @Serializable
 data class PortTarget(

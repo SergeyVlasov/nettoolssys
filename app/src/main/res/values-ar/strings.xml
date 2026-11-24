@@ -12,7 +12,9 @@
     <string name="time_ms_only">%1$d ms</string>
     <string name="check_port_protocol_label">منفذ %1$d (%2$s)</string>
     <string name="protocol_tcp">TCP</string>
-    <string name="protocol_udp">UDP</string>
+    <string name="protocol_http">http</string>
+    <string name="protocol_https">https</string>
+    <string name="protocol_ssh">SSH</string>
     <string name="check_row_format">%1$s — %2$s</string>
     <string name="check_row_with_ms">%1$s — %2$s · %3$d ms</string>
     <string name="status_idle">لم يُفحص</string>
@@ -31,6 +33,8 @@
     <string name="action_close">إغلاق</string>
     <string name="settings">الإعدادات</string>
     <string name="settings_theme">المظهر</string>
+    <string name="settings_language">اللغة</string>
+    <string name="language_system">افتراضي النظام</string>
     <string name="theme_light">فاتح</string>
     <string name="theme_dark">داكن</string>
     <string name="export_servers">تصدير الخوادم (JSON)</string>
@@ -54,6 +58,9 @@
     <string name="scheduled_monitoring_notifications_denied">الإشعارات متوقفة، لذلك لن تظهر تنبيهات الحالة. المراقبة ما زالت مفعّلة.</string>
     <string name="scheduled_monitoring_history">عرض السجل</string>
     <string name="history_title">سجل المراقبة</string>
+    <string name="history_server">الخادم</string>
+    <string name="history_server_placeholder">اختر خادمًا</string>
+    <string name="history_period">الفترة</string>
     <string name="history_period_24h">24 ساعة</string>
     <string name="history_period_7d">7 أيام</string>
     <string name="history_period_30d">30 يومًا</string>
