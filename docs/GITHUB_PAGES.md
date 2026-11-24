@@ -1,18 +1,19 @@
 # GitHub Pages — privacy policy URL for Google Play
 
-## Recommended: branch `gh-pages`
+## Recommended: `gh-pages` branch
 
-Сайт собирается из каталога **`site/`** в корне репозитория (на `main`). Ветка **`gh-pages`** содержит только эти файлы в корне (без кода Android).
+The published site is built from the **`site/`** folder on `main`. The **`gh-pages`** branch contains only those files at the branch root (no Android app code).
 
 | File (on `gh-pages` / in `site/`) | Purpose |
 |-----------------------------------|---------|
-| `index.html` | English privacy policy — **Play Console URL** |
-| `privacy-ru.html` | Russian privacy policy |
+| `index.html` | English privacy policy — **URL for Play Console** |
 | `.nojekyll` | Disable Jekyll on GitHub Pages |
 
-Markdown-исходники для правок: `docs/PRIVACY_POLICY.en.md`, `docs/PRIVACY_POLICY.md`. HTML для Play обновляйте в `site/index.html` (и при необходимости дублируйте в `docs/index.html`).
+**Language:** the public site is **English only**. Russian text lives in the repo as `docs/PRIVACY_POLICY.md` (not deployed to Pages).
 
-Before publishing, replace placeholder e-mails in `site/*.html` and the data-controller text in section 1.
+Edit Markdown in `docs/PRIVACY_POLICY.en.md`; keep `site/index.html` (and optionally `docs/index.html`) in sync for Play.
+
+Before publishing, replace `REPLACE_WITH_YOUR_EMAIL@example.com` and the data-controller sentence in section 1 of `site/index.html`.
 
 ### Publish or refresh `gh-pages`
 
@@ -28,19 +29,19 @@ git push -u origin gh-pages
 2. **Settings → Pages → Build and deployment**
 3. **Source:** Deploy from a branch
 4. **Branch:** `gh-pages`, folder **`/ (root)`**
-5. URL: `https://<github-username>.github.io/<repo-name>/`
-6. Play Console → **App content → Privacy policy** → paste that URL.
+5. Site URL: `https://<github-username>.github.io/<repo-name>/`
+6. **Play Console → App content → Privacy policy** → paste that URL.
 
 ### Alternative: `/docs` on `main`
 
-You can instead deploy **`main`** + folder **`/docs`** (same HTML in `docs/index.html`). The dedicated `gh-pages` branch keeps the published site separate from the app repo layout.
+You can deploy **`main`** with folder **`/docs`** instead (`docs/index.html`). The dedicated `gh-pages` branch keeps the live site separate from the app tree.
 
 ## Custom domain (optional)
 
-In Pages settings, add a custom domain and DNS records from GitHub. Use the HTTPS URL in Play Console.
+Add a custom domain in Pages settings and configure DNS as GitHub describes. Use the HTTPS URL in Play Console.
 
 ## Updating the policy
 
-1. Edit `site/index.html` / `site/privacy-ru.html` (and Markdown in `docs/` if you keep them in sync).
-2. Bump **Last updated** dates.
+1. Edit `site/index.html` (and `docs/PRIVACY_POLICY.en.md` / `docs/index.html` if you keep them aligned).
+2. Bump the **Last updated** date.
 3. Commit on `main`, run `./scripts/update-gh-pages.sh`, push `main` and `gh-pages`.

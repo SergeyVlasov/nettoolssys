@@ -1,11 +1,12 @@
 # GitHub Pages site (source)
 
-These files are published to the **`gh-pages`** branch root via `scripts/update-gh-pages.sh`.
+English-only privacy policy for Google Play. Published to the **`gh-pages`** branch root via `scripts/update-gh-pages.sh`.
 
 | File | Role |
 |------|------|
-| `index.html` | English privacy policy (URL for Google Play) |
-| `privacy-ru.html` | Russian privacy policy |
-| `.nojekyll` | Disable Jekyll processing on GitHub Pages |
+| `index.html` | Privacy policy (Play Console URL) |
+| `.nojekyll` | Disable Jekyll on GitHub Pages |
 
-Edit here (or sync from `docs/index.html` and `docs/PRIVACY_POLICY.md`), then run the update script from the repo root.
+Russian policy (not on Pages): `docs/PRIVACY_POLICY.md`.
+
+After edits, run `./scripts/update-gh-pages.sh` from the repo root and push `gh-pages`.
