@@ -13,7 +13,7 @@ The published site is built from the **`site/`** folder on `main`. The **`gh-pag
 
 Edit Markdown in `docs/PRIVACY_POLICY.en.md`; keep `site/index.html` (and optionally `docs/index.html`) in sync for Play.
 
-Before publishing, replace `REPLACE_WITH_YOUR_EMAIL@example.com` and the data-controller sentence in section 1 of `site/index.html`.
+Privacy contact in `site/index.html` is set to `ololoepololoe@gmail.com`; update the data-controller sentence in section 1 before publishing if needed.
 
 ### Publish or refresh `gh-pages`
 

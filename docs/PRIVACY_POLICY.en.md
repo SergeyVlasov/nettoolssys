@@ -20,7 +20,7 @@ We follow [Google Play’s Developer Program Policies](https://support.google.co
 
 | | |
 |---|---|
-| **Privacy contact** | `REPLACE_WITH_YOUR_EMAIL@example.com` |
+| **Privacy contact** | `ololoepololoe@gmail.com` |
 | **App** | Net Tools (`net.tools.sys`) |
 
 ## 2. What data is processed
@@ -155,7 +155,7 @@ We may update this Policy when the App or legal requirements change. The new ver
 
 Privacy questions:
 
-**Email:** `REPLACE_WITH_YOUR_EMAIL@example.com`
+**Email:** `ololoepololoe@gmail.com`
 
 ---
 
