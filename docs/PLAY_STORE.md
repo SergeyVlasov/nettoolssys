@@ -51,7 +51,7 @@ Upload this file in [Play Console](https://play.google.com/console) → your app
 
 - **Developer account** — one-time registration fee.
 - **App content**
-  - **Privacy policy** — English HTML for Play: `docs/index.html` (see `docs/GITHUB_PAGES.md`). Russian: `docs/PRIVACY_POLICY.md`. Replace `REPLACE_WITH_YOUR_EMAIL@example.com` and data-controller text, enable GitHub Pages from `/docs`, paste `https://<user>.github.io/<repo>/` in **Play Console → App content → Privacy policy**. Required for apps with sensitive permissions (e.g. notifications).
+  - **Privacy policy** — edit `site/index.html`, run `./scripts/update-gh-pages.sh`, push branch `gh-pages`; enable Pages on `gh-pages` / root (see `docs/GITHUB_PAGES.md`). Replace placeholder e-mails, paste `https://<user>.github.io/<repo>/` in **Play Console → App content → Privacy policy**. Required for apps with sensitive permissions (e.g. notifications).
   - **Data safety** — declare that server lists and monitoring history stay **on device**; no account; network used only to reach hosts the user configures.
   - **Ads** — No, if you do not show ads.
   - **Target audience** — Set accurately (not a kids app unless designed as such).
